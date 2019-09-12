@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Title</title>
+	<link rel="stylesheet" href="layui/css/layui.css"/>
+</head>
+<div>
+<form class="layui-form" action="" lay-filter="example">
+	<div class="layui-form-item">
+		<label class="layui-form-label">姓名</label>
+		<div class="layui-input-block">
+			<input type="text" name="speakerName" lay-verify="speakerName" placeholder="请输入姓名" autocomplete="off" class="layui-input">
+		</div>
+	</div>
+
+	<input type="hidden" name="id" lay-verify="id" class="layui-input">
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">职位</label>
+		<div class="layui-input-block">
+			<input type="text" name="speakerJob" lay-verify="speakerJob" placeholder="请输入职位" autocomplete="off" class="layui-input">
+		</div>
+	</div>
+
+	<div class="layui-form-item">
+		<label class="layui-form-label">头像地址</label>
+		<div class="layui-input-block">
+			<input type="text" name="headImgUrl" lay-verify="headImgUrl" placeholder="请输入头像地址" autocomplete="off" class="layui-input">
+		</div>
+	</div>
+	<div class="layui-form-item layui-form-text">
+		<label class="layui-form-label">简介</label>
+		<div class="layui-input-block">
+			<textarea placeholder="请输入简介" class="layui-textarea" name="speakerDesc" type=""></textarea>
+		</div>
+	</div>
+	<div class="layui-form-item">
+		<div class="layui-input-block">
+			<button class="layui-btn" lay-submit="" lay-filter="formDemo">立即修改</button>
+			<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+		</div>
+	</div>
+</form>
+</div>
+<script type="text/javascript" src="js/jquery-1.12.2.min.js"></script>
+<script type="text/javascript" src="layui/layui.js"></script>
+<script>
+    //Demo
+    layui.use(['form', 'laydate', 'layer'], function () {
+        var form = layui.form
+            , laydate = layui.laydate
+	        ,layer = layui.layer
+	        ,$ = layui.jquery;
+        findOne();
+
+
+        function findOne() {
+            $.ajax({
+                type: "get",
+                url: "findOneSpeaker.do" + window.location.search,
+                dataType: "json",
+                success: function (data) {
+                    if (data.code == 1) {
+                        //表单初始赋值
+                        form.val('example', data.info);
+                        $("#courseId").val(data.info.courseId);
+                        $("#speakerId").val(data.info.speakerId);
+
+                    } else {
+                        layer.msg(data.info);
+
+                    }
+                }
+            })
+        }
+
+        //监听提交
+        form.on('submit(formDemo)', function (data) {
+
+            $.ajax({
+                type: "post",
+                url: "updateSpeaker.do",
+                data: data.field,
+                dataType: "json",
+                success: function (data) {
+                    if (data.code == 1) {
+                        layer.msg("修改成功", {icon: 6, time: 1500},
+                            function () {
+                                var t = parent.layui.table;
+                                var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                                parent.layer.close(index); //再执行关闭
+								t.reload('SpeakerTable')
+                            });
+                    } else {
+                        /*layer.msg(data.info);*/
+                        layer.alert("修改失败", {icon: 2, time: 2000});
+                    }
+                },
+
+            });
+            return false;
+        });
+    });
+</script>
+</body>
+</html>

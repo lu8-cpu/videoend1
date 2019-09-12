@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+	<link rel="stylesheet" href="layui/css/layui.css"/>
+	<script type="text/javascript" src="js/jquery-1.12.2.min.js"></script>
+	<script type="text/javascript" src="layui/layui.js"></script>
+
+</head>
+<body>
+<div class="jumbotron" style="height:40px;padding-top: 15px;padding-bottom: 15px; background-color: #9F9F9F">
+	<div class="container" style="width: 80%; margin: 0 auto">
+		<h1>主讲人管理</h1>
+	</div>
+</div>
+<blockquote class="layui-elem-quote quoteBox">
+	<form class="layui-form">
+		<div class="layui-inline">
+			<a class="layui-btn layui-btn-normal addVideo_btn" id="addVideo">添加</a>
+		</div>
+	</form>
+</blockquote>
+
+<table class="layui-hide" id="demo" lay-filter="test" align="center"></table>
+
+<script type="text/html" id="barDemo">
+	<a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+	<a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+
+<script>
+    layui.use(['form', 'laydate', 'laypage', 'layer', 'table', 'carousel', 'upload', 'element', 'slider'], function () {
+        var laydate = layui.laydate //日期
+            /*, laypage = layui.laypage //分页*/
+            , layer = layui.layer //弹层
+            , table = layui.table //表格
+            , element = layui.element //元素操作
+            , index = layer.load(0)
+            , form = layui.form;
+        InitForm();
+
+        function InitForm() {
+            $.ajax({
+                type: 'post',
+                url: 'findSpeakerAndCourse.do',
+                dataType: 'json',
+                success: function (map) {
+                    if (map.course.length > 0) {
+
+                        var speakerName = $("#speakerNameHide").val();
+                        for (var i = 0; i < map.speaker.length; i++) {
+                            var name = map.speaker[i].speakerName;
+                            var value = map.speaker[i].id;
+                            if (speakerName == name) {
+                                $(".speakerName").append('<option value="' + value + '" selected="">' + name + '</option>');
+                            } else {
+                                $(".speakerName").append('<option value="' + value + '">' + name + '</option>');
+                            }
+                        }
+                        form.render('select');
+
+                    } else {
+                        layer.msg("下拉数据加载失败。。。");
+                    }
+
+                }
+            })
+        };
+
+
+        //执行一个 table 实例
+        table.render({
+            elem: '#demo'
+            , id: "SpeakerTable"
+            /*, height: 420*/
+            , url: 'listSpeaker.do' //数据接口
+            , title: '讲师表'
+            , page: { //支持传入 laypage 组件的所有参数（某些参数除外，如：jump/elem） - 详见文档
+                layout: ['limit', 'count', 'prev', 'page', 'next', 'skip'] //自定义分页布局
+                , curr: 1 //设定初始在第 5 页
+                , groups: 5 //只显示 1 个连续页码
+                , first: false //不显示首页
+                , last: false //不显示尾页
+                , limits: [5, 10, 20]
+
+            } //开启分页
+            , toolbar: 'default'//开启工具栏，此处显示默认图标，可以自定义模板，详见文档
+            , cols: [[ //表头
+                {checkbox: true, align: 'center', LAY_CHECKED: false, filter: 'test', fixed: 'left'}
+                , {field: 'id', title: '序号', width: 80, sort: true, fixed: 'left'}
+                , {field: 'speakerName', title: '名称', width: 90, sort: true, align: "center"}
+                , {field: 'speakerJob', title: '职位', width: 160, sort: true, align: "center"}
+                , {field: 'speakerDesc', title: '简介', width: 420, sort: true, align: "center"}
+                , {fixed: 'right', width: 165, align: 'center', toolbar: '#barDemo'}
+            ]]
+            , done: function (res) {   //返回数据执行回调函数
+                layer.close(index); //返回数据关闭loading
+            }
+        });
+
+        //批量删除
+        $(document).on('click', '#getCheckData', function () {
+            //获取选中数据
+            var checkStatus = table.checkStatus("SpeakerTable")
+                , data = checkStatus.data;
+            if (data == "") {
+                layer.msg("至少需要选一个", {icon: 2});
+                return;
+            }
+            //捕捉到所有被选中的，发异步进行删除
+            var ids = "";
+            if (data.length > 0) {
+                for (var i = 0; i < data.length; i++) {
+                    //获取所选的对象的 id并进行拼接
+                    ids += data[i].id + ",";
+                }
+            }
+            layer.confirm("确认要删除吗?" + ids, {icon: 3, title: '提示信息'}, function (index) {
+                $.ajax({
+                    type: "get",
+                    url: "deleteVideos.do",
+                    data: {"ids": ids},
+                    success: function (data) {
+                        if (data.code == 1) {
+                            layer.msg("删除成功！", {icon: 6, time: 1500}
+                                , function () {
+                                    // 重新加载页面,demo 表示父窗体table标签的id值
+                                    tableIns.reload();
+                                    layer.close(index);
+                                });
+                        } else {
+                            layer.msg("删除失败");
+                        }
+                    }
+                });
+            });
+
+
+        });
+
+        //绑定按钮事件
+        $(document).on('click', '#addVideo', function () {
+            layer.open({
+                type: 2,
+                title: '添加主讲人',
+                shadeClose: true,
+                shade: 0.8,
+                area: ['600px', '90%'],
+                content: 'addSpeaker.html'
+            });
+        });
+
+        //监听行工具事件
+        table.on('tool(test)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+            var data = obj.data //获得当前行数据
+                , layEvent = obj.event; //获得 lay-event 对应的值
+            switch (layEvent) {
+                case 'detail':
+                    //json字符串转换成Json数据 eval("("+jsonStr+")")  /JSON.parse(jsonStr)
+                    var jsonstr = JSON.stringify(data);//json数据转字符串  JSON.stringify(obj)
+                    layer.alert(jsonstr);
+                    break;
+                case 'del':
+                    layer.confirm('删除 [id]：' + data.id, function (index) {
+                        obj.del();
+                        layer.close(index);
+                        //发送请求到后台
+                        $.ajax({
+                            type: "get",
+                            url: "deleteSpeaker.do",
+                            data: {id: data.id},
+                            dataType: "json",
+                            success: function (data) {
+                                if (data.code == 1) {
+                                    layer.msg("删除成功!", {
+                                        icon: 6,
+                                        time: 500
+                                    }, function () {
+                                        table.reload('demo');// 重新加载页面,demo 表示父窗体table标签的id值
+                                    });
+                                } else {
+                                    alert(data.info)
+                                }
+                            }
+                        })
+                    });
+                    break;
+                case 'edit':
+                    layer.open({
+                        type: 2,
+                        title: '修改员工',
+                        shadeClose: true,
+                        shade: 0.8,
+                        area: ['800px', '90%'],
+                        content: 'updateSpeaker.html?id=' + data.id
+                    });
+                    break;
+            }
+        });
+    })
+</script>
+</body>
+</html>

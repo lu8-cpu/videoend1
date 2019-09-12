@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Title</title>
+	<link rel="stylesheet" href="layui/css/layui.css"/>
+</head>
+<body>
+<div class="layui-anim layui-anim-scaleSpring">
+	<form class="layui-form" id="add-form" lay-filter="example">
+		<input type="hidden" name="id" lay-verify="id" class="layui-input">
+		<div class="layui-form-item">
+			<label class="layui-form-label">名称</label>
+			<div class="layui-input-block">
+				<input type="text" name="title" required lay-verify="required" placeholder="视频名称" autocomplete="off"
+				       class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item layui-form-text">
+			<label class="layui-form-label">简介</label>
+			<div class="layui-input-block">
+				<textarea name="detail" placeholder="请输入内容" class="layui-textarea"></textarea>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">教师名称</label>
+			<div class="layui-input-block">
+				<select name="speakerId" lay-verify="required">
+					<option value="7">张三</option>
+					<option value="8">李四</option>
+					<option value="9">老闫</option>
+					<option value="10">王五</option>
+					<option value="11">赵六</option>
+					<option value="13">凯云</option>
+					<option value="14">鲍佳佳</option>
+				</select>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">所属课程</label>
+			<div class="layui-input-block">
+				<select name="courseId" lay-verify="required">
+					<option value="1">WEB前端</option>
+					<option value="2">Java</option>
+					<option value="3">Android</option>
+					<option value="4">IOS</option>
+					<option value="5">大数据</option>
+					<option value="6">UI</option>
+					<option value="7">VR</option>
+					<option value="8">U3D</option>
+					<option value="9">人工智能</option>
+					<option value="10">Python</option>
+					<option value="11">PHP</option>
+				</select>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">时长</label>
+			<div class="layui-input-block">
+				<input type="text" name="time" required lay-verify="required" placeholder="精确到毫秒(正整数)"
+				       autocomplete="off" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">封面地址</label>
+			<div class="layui-input-block">
+				<input type="text" name="imageUrl" required lay-verify="required" placeholder="具体的url"
+				       autocomplete="off" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">视频地址</label>
+			<div class="layui-input-block">
+				<input type="text" name="videoUrl" required lay-verify="required" placeholder="具体的url"
+				       autocomplete="off" class="layui-input">
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<label class="layui-form-label">播放次数</label>
+			<div class="layui-input-block">
+				<input type="text" name="playNum" lay-verify="play_num" placeholder="" autocomplete="off" class="layui-input">
+			</div>
+		</div>
+
+		<div class="layui-form-item">
+			<div class="layui-input-block">
+				<button class="layui-btn" lay-submit lay-filter="formDemo">立即提交</button>
+				<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+			</div>
+		</div>
+	</form>
+</div>
+
+<script type="text/javascript" src="js/jquery-1.12.2.min.js"></script>
+<script type="text/javascript" src="layui/layui.js"></script>
+<script>
+    //Demo
+    layui.use(['form', 'laydate', 'layer'], function () {
+        var form = layui.form
+            , laydate = layui.laydate
+	        ,layer = layui.layer
+	        ,$ = layui.jquery;
+        findOne();
+
+
+        function findOne() {
+            $.ajax({
+                type: "get",
+                url: "findOneVideo.do" + window.location.search,
+                dataType: "json",
+                success: function (data) {
+                    if (data.code == 1) {
+                        //表单初始赋值
+                        form.val('example', data.info);
+                        $("#courseId").val(data.info.courseId);
+                        $("#speakerId").val(data.info.speakerId);
+
+                    } else {
+                        layer.msg(data.info);
+
+                    }
+                }
+            })
+        }
+
+        //监听提交
+        form.on('submit(formDemo)', function (data) {
+
+            $.ajax({
+                type: "post",
+                url: "updateVideo.do",
+                data: data.field,
+                dataType: "json",
+                success: function (data) {
+                    if (data.code == 1) {
+                        layer.msg("修改成功", {icon: 6, time: 1500},
+                            function () {
+                                var t = parent.layui.table;
+                                var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                                parent.layer.close(index); //再执行关闭
+								t.reload(Videotable);
+                            });
+                    } else {
+                        /*layer.msg(data.info);*/
+                        layer.alert("修改失败", {icon: 2, time: 2000});
+                    }
+                },
+
+            });
+            return false;
+        });
+    });
+</script>
+</body>
+</html>

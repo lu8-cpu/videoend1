@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Title</title>
+	<link rel="stylesheet" href="layui/css/layui.css"/>
+</head>
+<div>
+	<form class="layui-form" action="" lay-filter="example">
+		<div class="layui-form-item">
+			<label class="layui-form-label">所属学科</label>
+			<div class="layui-input-block">
+				<select name="subjectId" id="clazzNameHide" class="subjectName" lay-verify="required">
+					<option value="">请选类别...</option>
+				</select>
+			</div>
+		</div>
+
+		<input type="hidden" name="id" lay-verify="id" class="layui-input">
+
+		<div class="layui-form-item">
+			<label class="layui-form-label">标题</label>
+			<div class="layui-input-block">
+				<input type="text" name="courseTitle" lay-verify="courseTitle" placeholder="请输入标题" autocomplete="off" class="layui-input">
+			</div>
+		</div>
+
+		<div class="layui-form-item layui-form-text">
+			<label class="layui-form-label">简介</label>
+			<div class="layui-input-block">
+				<textarea placeholder="请输入简介" class="layui-textarea" name="courseDesc" type=""></textarea>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<div class="layui-input-block">
+				<button class="layui-btn" lay-submit="" lay-filter="formDemo">修改</button>
+				<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+			</div>
+		</div>
+	</form>
+</div>
+<script type="text/javascript" src="js/jquery-1.12.2.min.js"></script>
+<script type="text/javascript" src="layui/layui.js"></script>
+<script>
+    //Demo
+    layui.use(['form', 'laydate', 'layer'], function () {
+        var form = layui.form
+            , laydate = layui.laydate
+	        ,layer = layui.layer
+	        ,$ = layui.jquery;
+        findOne();
+        InitForm();
+
+
+        function InitForm() {
+            $.ajax({
+                type: 'post',
+                url: 'findAllSubject.do',
+                dataType: 'json',
+                success: function (map) {
+                    if (map.subject.length > 0) {
+                        //加载课程
+                        var subjectName = $("#coureseNameHide").val();
+                        for (var i = 0; i < map.subject.length; i++) {
+                            var title = map.subject[i].subjectName;
+                            var id = map.subject[i].id;
+                            if (subjectName == title) {
+                                $(".subjectName").append('<option value="' + id + '" selected="">' + title + '</option>');
+                            } else {
+                                $(".subjectName").append('<option value="' + id + '">' + title + '</option>');
+
+                            }
+                        }
+
+                        form.render('select');
+
+                    } else {
+                        layer.msg("下拉数据加载失败。。。");
+                    }
+
+                }
+            })
+        };
+
+
+
+        function findOne() {
+            $.ajax({
+                type: "get",
+                url: "findOneCourse.do" + window.location.search,
+                dataType: "json",
+                success: function (data) {
+                    if (data.code == 1) {
+                        //表单初始赋值
+                        form.val('example', data.info);
+                        $("#subjectName").val(data.info.subjectId);
+
+                    } else {
+                        layer.msg(data.info);
+
+                    }
+                }
+            })
+        }
+
+        //监听提交
+        form.on('submit(formDemo)', function (data) {
+
+            $.ajax({
+                type: "post",
+                url: "updateCourse.do",
+                data: data.field,
+                dataType: "json",
+                success: function (data) {
+                    if (data.code == 1) {
+                        layer.msg("修改成功", {icon: 6, time: 1500},
+                            function () {
+                                var t = parent.layui.table;
+                                var index = parent.layer.getFrameIndex(window.name); //先得到当前iframe层的索引
+                                parent.layer.close(index); //再执行关闭
+								t.reload("CourseTable")
+                            });
+                    } else {
+                        /*layer.msg(data.info);*/
+                        layer.alert("修改失败", {icon: 2, time: 2000});
+                    }
+                },
+
+            });
+            return false;
+        });
+    });
+</script>
+</body>
+</html>
